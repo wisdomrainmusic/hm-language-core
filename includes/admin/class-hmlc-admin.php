@@ -13,6 +13,7 @@ class HMLC_Admin
     private HMLC_Translated_Post $translated_post;
     private HMLC_Admin_Filters_Post $filters_post;
     private HMLC_Admin_Links $admin_links;
+    private HMLC_Admin_Sync $admin_sync;
 
     public function init(): void
     {
@@ -27,6 +28,15 @@ class HMLC_Admin
         require_once HMLC_PLUGIN_DIR . '/includes/admin/class-hmlc-admin-filters-post.php';
         $this->filters_post = new HMLC_Admin_Filters_Post($this->model, $this->translated_post, $this->admin_links);
         $this->filters_post->init();
+
+        require_once HMLC_PLUGIN_DIR . '/includes/sync/class-hmlc-sync-tax.php';
+        require_once HMLC_PLUGIN_DIR . '/includes/sync/class-hmlc-sync-post-metas.php';
+        require_once HMLC_PLUGIN_DIR . '/includes/sync/class-hmlc-admin-sync.php';
+
+        $sync_tax = new HMLC_Sync_Tax();
+        $sync_post_metas = new HMLC_Sync_Post_Metas();
+        $this->admin_sync = new HMLC_Admin_Sync($this->model, $this->translated_post, $hmlc->translated_object, $sync_tax, $sync_post_metas);
+        $this->admin_sync->init();
 
         add_action('admin_menu', [$this, 'register_menu']);
     }

@@ -21,7 +21,7 @@ class HMLC_Admin_Links
             return '';
         }
 
-        return add_query_arg(
+        $url = add_query_arg(
             [
                 'post' => $post_id,
                 'action' => 'edit',
@@ -29,5 +29,7 @@ class HMLC_Admin_Links
             ],
             admin_url('post.php')
         );
+
+        return wp_nonce_url($url, 'hmlc_create_translation_' . $post_id, 'hmlc_nonce');
     }
 }
