@@ -8,4 +8,7 @@ if (!defined('ABSPATH')) {
 
 class HMLC_Frontend
 {
+    public function init(): void
+    {
+    }
 }
