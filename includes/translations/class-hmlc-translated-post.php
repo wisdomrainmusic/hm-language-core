@@ -20,7 +20,7 @@ class HMLC_Translated_Post
     public function init(): void
     {
         add_action('init', [$this, 'register_taxonomy'], 5);
-        add_action('save_post', [$this, 'maybe_assign_default_language'], 20, 2);
+        add_action('save_post', [$this, 'maybe_assign_default_language'], 20, 3);
     }
 
     /**
@@ -70,10 +70,17 @@ class HMLC_Translated_Post
         return $slug === false ? null : (string) $slug;
     }
 
-    private function maybe_assign_default_language(int $post_id, WP_Post $post): void
+    public function maybe_assign_default_language(int $post_id, ?WP_Post $post = null, bool $update = false): void
     {
         if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
             return;
+        }
+
+        if (!$post instanceof WP_Post) {
+            $post = get_post($post_id);
+            if (!$post instanceof WP_Post) {
+                return;
+            }
         }
 
         if (!in_array($post->post_type, self::POST_TYPES, true)) {
