@@ -10,6 +10,11 @@ class HMLC_Admin_Links
 {
     public function get_edit_post_link_for_translation(int $post_id): string
     {
+        $post = get_post($post_id);
+        if (!$post instanceof WP_Post || $post->post_status === 'trash') {
+            return '';
+        }
+
         $url = get_edit_post_link($post_id, 'raw');
         return is_string($url) ? $url : '';
     }

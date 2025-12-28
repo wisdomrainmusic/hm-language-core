@@ -124,6 +124,118 @@ class HMLC_Translated_Object
         $this->update_object_map($object_map);
     }
 
+    public function cleanup_missing_posts_in_group(string $group_id): void
+    {
+        if ($group_id === '') {
+            return;
+        }
+
+        $groups = $this->get_groups();
+        $object_map = $this->get_object_map();
+        $group = $groups[$group_id] ?? null;
+
+        if (!is_array($group)) {
+            $updated = false;
+            foreach ($object_map as $post_id => $mapped_group) {
+                if ($mapped_group === $group_id) {
+                    unset($object_map[$post_id]);
+                    $updated = true;
+                }
+            }
+
+            if ($updated) {
+                $this->update_object_map($object_map);
+            }
+
+            return;
+        }
+
+        $translations = is_array($group['translations'] ?? null) ? $group['translations'] : [];
+        $changed = false;
+
+        foreach ($translations as $lang => $translated_id) {
+            $translated_id = (int) $translated_id;
+            if ($translated_id <= 0 || $this->is_valid_translation_post_id($translated_id)) {
+                continue;
+            }
+
+            unset($translations[$lang]);
+            if (($object_map[$translated_id] ?? null) === $group_id) {
+                unset($object_map[$translated_id]);
+            }
+            $changed = true;
+        }
+
+        if ($changed) {
+            $group['translations'] = $this->sanitize_translation_map($translations);
+            $groups[$group_id] = $group;
+            $this->update_groups($groups);
+            $this->update_object_map($object_map);
+        }
+
+        if (!in_array($group_id, $object_map, true)) {
+            unset($groups[$group_id]);
+            $this->update_groups($groups);
+        }
+    }
+
+    public function cleanup_post_id(int $post_id): void
+    {
+        if ($post_id <= 0) {
+            return;
+        }
+
+        $group_id = $this->get_group_id_for_object($post_id);
+        if ($group_id === null) {
+            return;
+        }
+
+        $groups = $this->get_groups();
+        $group = $groups[$group_id] ?? null;
+
+        if (is_array($group)) {
+            $translations = is_array($group['translations'] ?? null) ? $group['translations'] : [];
+            $changed = false;
+
+            foreach ($translations as $lang => $translated_id) {
+                if ((int) $translated_id !== $post_id) {
+                    continue;
+                }
+
+                unset($translations[$lang]);
+                $changed = true;
+            }
+
+            if ($changed) {
+                $group['translations'] = $this->sanitize_translation_map($translations);
+                $groups[$group_id] = $group;
+                $this->update_groups($groups);
+            }
+        }
+
+        $object_map = $this->get_object_map();
+        if (($object_map[$post_id] ?? null) === $group_id) {
+            unset($object_map[$post_id]);
+            $this->update_object_map($object_map);
+        }
+
+        $this->cleanup_missing_posts_in_group($group_id);
+    }
+
+    public function is_valid_translation_post_id(int $post_id): bool
+    {
+        if ($post_id <= 0) {
+            return false;
+        }
+
+        $post = get_post($post_id);
+        if (!$post instanceof WP_Post) {
+            return false;
+        }
+
+        return $post->post_status !== 'trash';
+    }
+
     public function ensure_group(int $object_id, string $post_type): string
     {
         $map = $this->get_object_map();

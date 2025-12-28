@@ -9,10 +9,6 @@ if (!defined('ABSPATH')) {
 class HMLC_Sync_Variations
 {
     private const DENIED_KEYS = [
-        '_stock',
-        '_stock_status',
-        '_manage_stock',
-        '_backorders',
         '_sku',
         '_edit_lock',
         '_edit_last',

@@ -42,6 +42,7 @@ class HMLC
         $this->translated_object = new HMLC_Translated_Object();
         $this->translated_post = new HMLC_Translated_Post($this->translated_object);
         $this->translated_post->init();
+        $this->register_post_cleanup_hooks();
 
         if (is_admin()) {
             require_once HMLC_PLUGIN_DIR . '/includes/admin/class-hmlc-admin-base.php';
@@ -56,5 +57,29 @@ class HMLC
 
         $frontend = new HMLC_Frontend();
         $frontend->init();
+    }
+
+    private function register_post_cleanup_hooks(): void
+    {
+        add_action('before_delete_post', [$this, 'cleanup_translation_post']);
+        add_action('wp_trash_post', [$this, 'cleanup_translation_post']);
+    }
+
+    public function cleanup_translation_post(int $post_id): void
+    {
+        if ($post_id <= 0) {
+            return;
+        }
+
+        $post = get_post($post_id);
+        if (!$post instanceof WP_Post) {
+            return;
+        }
+
+        if (!in_array($post->post_type, $this->translated_post->get_supported_post_types(), true)) {
+            return;
+        }
+
+        $this->translated_object->cleanup_post_id($post_id);
     }
 }

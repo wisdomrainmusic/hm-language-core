@@ -95,11 +95,16 @@ class HMLC_Admin_Filters_Post
             if ($current_language === $language->slug) {
                 echo '<em>Current</em>';
             } elseif (isset($translations[$language->slug])) {
-                $edit_link = $this->admin_links->get_edit_post_link_for_translation((int) $translations[$language->slug]);
+                $translation_id = (int) $translations[$language->slug];
+                $edit_link = $this->admin_links->get_edit_post_link_for_translation($translation_id);
                 if ($edit_link !== '') {
                     echo '<a href="' . esc_url($edit_link) . '">Edit</a>';
                 } else {
-                    echo '<em>Unavailable</em>';
+                    $create_link = $this->admin_links->get_create_translation_link($post->ID, $language->slug);
+                    echo '<span>Not translated</span>';
+                    if ($create_link !== '') {
+                        echo ' <a href="' . esc_url($create_link) . '">Create</a>';
+                    }
                 }
             } else {
                 $create_link = $this->admin_links->get_create_translation_link($post->ID, $language->slug);

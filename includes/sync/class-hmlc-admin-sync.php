@@ -195,12 +195,20 @@ class HMLC_Admin_Sync
         }
 
         $new_product = wc_get_product($new_id);
-        if ($new_product) {
-            $new_product->save();
+        if (!$new_product) {
+            return;
         }
 
-        if (function_exists('wc_delete_product_transients')) {
-            wc_delete_product_transients($new_id);
+        if ($new_product->is_type('variable')) {
+            if (class_exists('WC_Product_Variable')) {
+                WC_Product_Variable::sync($new_id);
+            }
+
+            if (function_exists('wc_delete_product_transients')) {
+                wc_delete_product_transients($new_id);
+            }
         }
+
+        $new_product->save();
     }
 }
