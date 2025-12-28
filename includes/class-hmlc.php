@@ -10,6 +10,9 @@ class HMLC
 {
     private static ?self $instance = null;
 
+    public HMLC_Options $options;
+    public HMLC_Model $model;
+
     private function __construct()
     {
     }
@@ -26,6 +29,13 @@ class HMLC
 
     public function init(): void
     {
+        require_once HMLC_PLUGIN_DIR . '/includes/class-hmlc-language.php';
+        require_once HMLC_PLUGIN_DIR . '/includes/class-hmlc-options.php';
+        require_once HMLC_PLUGIN_DIR . '/includes/class-hmlc-model.php';
+
+        $this->options = new HMLC_Options();
+        $this->model = new HMLC_Model($this->options);
+
         if (is_admin()) {
             require_once HMLC_PLUGIN_DIR . '/includes/admin/class-hmlc-admin-base.php';
             require_once HMLC_PLUGIN_DIR . '/includes/admin/class-hmlc-admin.php';
