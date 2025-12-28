@@ -40,6 +40,16 @@ class HMLC_Sync_Variations
 
         $variation_ids = $source_product->get_children();
         if ($variation_ids === [] || !is_array($variation_ids)) {
+            $variation_ids = get_posts([
+                'post_type' => 'product_variation',
+                'post_parent' => $source_product_id,
+                'post_status' => ['publish', 'private', 'draft', 'pending'],
+                'fields' => 'ids',
+                'numberposts' => -1,
+            ]);
+        }
+
+        if ($variation_ids === [] || !is_array($variation_ids)) {
             return 0;
         }
 
@@ -61,6 +71,7 @@ class HMLC_Sync_Variations
             }
 
             $this->copy_meta($variation_id, $new_variation_id);
+            delete_post_meta($new_variation_id, '_sku');
             $count++;
         }
 

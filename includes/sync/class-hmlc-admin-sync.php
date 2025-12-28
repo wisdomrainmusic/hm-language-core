@@ -189,10 +189,7 @@ class HMLC_Admin_Sync
             return;
         }
 
-        $cloned = $this->sync_variations->clone_variations($source_id, $new_id);
-        if ($cloned <= 0) {
-            return;
-        }
+        $this->sync_variations->clone_variations($source_id, $new_id);
 
         $new_product = wc_get_product($new_id);
         if (!$new_product) {
@@ -210,5 +207,6 @@ class HMLC_Admin_Sync
         }
 
         $new_product->save();
+        delete_post_meta($new_id, '_sku');
     }
 }
