@@ -31,11 +31,20 @@ class HMLC_Admin
 
         require_once HMLC_PLUGIN_DIR . '/includes/sync/class-hmlc-sync-tax.php';
         require_once HMLC_PLUGIN_DIR . '/includes/sync/class-hmlc-sync-post-metas.php';
+        require_once HMLC_PLUGIN_DIR . '/includes/sync/class-hmlc-sync-variations.php';
         require_once HMLC_PLUGIN_DIR . '/includes/sync/class-hmlc-admin-sync.php';
 
         $sync_tax = new HMLC_Sync_Tax();
         $sync_post_metas = new HMLC_Sync_Post_Metas();
-        $this->admin_sync = new HMLC_Admin_Sync($this->model, $this->translated_post, $hmlc->translated_object, $sync_tax, $sync_post_metas);
+        $sync_variations = new HMLC_Sync_Variations();
+        $this->admin_sync = new HMLC_Admin_Sync(
+            $this->model,
+            $this->translated_post,
+            $hmlc->translated_object,
+            $sync_tax,
+            $sync_post_metas,
+            $sync_variations
+        );
         $this->admin_sync->init();
 
         add_action('admin_menu', [$this, 'register_menu']);

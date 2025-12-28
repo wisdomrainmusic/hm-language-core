@@ -13,19 +13,22 @@ class HMLC_Admin_Sync
     private HMLC_Translated_Object $translated_object;
     private HMLC_Sync_Tax $sync_tax;
     private HMLC_Sync_Post_Metas $sync_post_metas;
+    private HMLC_Sync_Variations $sync_variations;
 
     public function __construct(
         HMLC_Model $model,
         HMLC_Translated_Post $translated_post,
         HMLC_Translated_Object $translated_object,
         HMLC_Sync_Tax $sync_tax,
-        HMLC_Sync_Post_Metas $sync_post_metas
+        HMLC_Sync_Post_Metas $sync_post_metas,
+        HMLC_Sync_Variations $sync_variations
     ) {
         $this->model = $model;
         $this->translated_post = $translated_post;
         $this->translated_object = $translated_object;
         $this->sync_tax = $sync_tax;
         $this->sync_post_metas = $sync_post_metas;
+        $this->sync_variations = $sync_variations;
     }
 
     public function init(): void
@@ -92,6 +95,7 @@ class HMLC_Admin_Sync
         $this->sync_tax->copy_taxonomies($post_id, $new_id);
         $this->sync_post_metas->copy_post_metas($post_id, $new_id);
         $this->copy_featured_image($post_id, $new_id);
+        $this->sync_woocommerce_product($post_id, $new_id, $post->post_type);
         $this->translated_post->set_post_language($new_id, $target_lang);
         $this->link_translations($post_id, $new_id, $current_lang, $target_lang, $post->post_type);
 
@@ -161,5 +165,39 @@ class HMLC_Admin_Sync
 
         wp_safe_redirect($url);
         exit;
+    }
+
+    private function sync_woocommerce_product(int $source_id, int $new_id, string $post_type): void
+    {
+        if ($post_type !== 'product') {
+            return;
+        }
+
+        if (!function_exists('wc_get_product')) {
+            return;
+        }
+
+        $product = wc_get_product($source_id);
+        if (!$product) {
+            return;
+        }
+
+        if (!$product->is_type('variable')) {
+            return;
+        }
+
+        $cloned = $this->sync_variations->clone_variations($source_id, $new_id);
+        if ($cloned <= 0) {
+            return;
+        }
+
+        $new_product = wc_get_product($new_id);
+        if ($new_product) {
+            $new_product->save();
+        }
+
+        if (function_exists('wc_delete_product_transients')) {
+            wc_delete_product_transients($new_id);
+        }
     }
 }
