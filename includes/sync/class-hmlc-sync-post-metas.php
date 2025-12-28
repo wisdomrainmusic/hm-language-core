@@ -11,6 +11,7 @@ class HMLC_Sync_Post_Metas
     private const DENYLIST = [
         '_edit_lock',
         '_edit_last',
+        '_sku',
         '_wc_average_rating',
         '_wc_review_count',
         'total_sales',
@@ -50,6 +51,8 @@ class HMLC_Sync_Post_Metas
                 add_post_meta($to_id, $meta_key, $value);
             }
         }
+
+        delete_post_meta($to_id, '_sku');
     }
 
     private function is_denied_key(string $meta_key): bool
