@@ -12,6 +12,7 @@ class HMLC
 
     public HMLC_Options $options;
     public HMLC_Model $model;
+    public HMLC_Translated_Object $translated_object;
     public HMLC_Translated_Post $translated_post;
 
     private function __construct()
@@ -33,11 +34,13 @@ class HMLC
         require_once HMLC_PLUGIN_DIR . '/includes/class-hmlc-language.php';
         require_once HMLC_PLUGIN_DIR . '/includes/class-hmlc-options.php';
         require_once HMLC_PLUGIN_DIR . '/includes/class-hmlc-model.php';
+        require_once HMLC_PLUGIN_DIR . '/includes/translations/class-hmlc-translated-object.php';
         require_once HMLC_PLUGIN_DIR . '/includes/translations/class-hmlc-translated-post.php';
 
         $this->options = new HMLC_Options();
         $this->model = new HMLC_Model($this->options);
-        $this->translated_post = new HMLC_Translated_Post();
+        $this->translated_object = new HMLC_Translated_Object();
+        $this->translated_post = new HMLC_Translated_Post($this->translated_object);
         $this->translated_post->init();
 
         if (is_admin()) {

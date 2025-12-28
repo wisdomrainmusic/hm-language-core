@@ -12,6 +12,7 @@ class HMLC_Admin
     private HMLC_Model $model;
     private HMLC_Translated_Post $translated_post;
     private HMLC_Admin_Filters_Post $filters_post;
+    private HMLC_Admin_Links $admin_links;
 
     public function init(): void
     {
@@ -20,8 +21,11 @@ class HMLC_Admin
         $this->model = $hmlc->model;
         $this->translated_post = $hmlc->translated_post;
 
+        require_once HMLC_PLUGIN_DIR . '/includes/admin/class-hmlc-admin-links.php';
+        $this->admin_links = new HMLC_Admin_Links();
+
         require_once HMLC_PLUGIN_DIR . '/includes/admin/class-hmlc-admin-filters-post.php';
-        $this->filters_post = new HMLC_Admin_Filters_Post($this->model, $this->translated_post);
+        $this->filters_post = new HMLC_Admin_Filters_Post($this->model, $this->translated_post, $this->admin_links);
         $this->filters_post->init();
 
         add_action('admin_menu', [$this, 'register_menu']);
