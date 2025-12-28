@@ -9,10 +9,6 @@ if (!defined('ABSPATH')) {
 class HMLC_Sync_Post_Metas
 {
     private const DENYLIST = [
-        '_stock',
-        '_stock_status',
-        '_manage_stock',
-        '_backorders',
         '_edit_lock',
         '_edit_last',
         '_wc_average_rating',

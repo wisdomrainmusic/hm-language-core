@@ -63,6 +63,11 @@ class HMLC_Translated_Post
         return $this->translated_object->get_translations($post_id);
     }
 
+    public function is_valid_translation_post_id(int $post_id): bool
+    {
+        return $this->translated_object->is_valid_translation_post_id($post_id);
+    }
+
     /**
      * @param array<string, int> $map
      */
