@@ -8,11 +8,12 @@ if (!defined('ABSPATH')) {
 
 class HMLC_Sync_Variations
 {
-    private const DENYLIST = [
+    private const DENIED_KEYS = [
         '_stock',
         '_stock_status',
         '_manage_stock',
         '_backorders',
+        '_sku',
         '_edit_lock',
         '_edit_last',
         '_wc_average_rating',
@@ -20,42 +21,55 @@ class HMLC_Sync_Variations
         'total_sales',
     ];
 
-    private const DENYLIST_PREFIXES = [
+    private const DENIED_PREFIXES = [
         '_transient_',
         '_oembed_',
         '_wp_old_slug',
     ];
 
-    public function clone_variations(int $source_id, int $new_parent_id): int
+    public function clone_variations(int $source_product_id, int $new_product_id): int
     {
-        if ($source_id <= 0 || $new_parent_id <= 0) {
+        if ($source_product_id <= 0 || $new_product_id <= 0) {
             return 0;
         }
 
-        $variations = get_posts([
-            'post_type' => 'product_variation',
-            'post_parent' => $source_id,
-            'numberposts' => -1,
-            'post_status' => 'any',
-        ]);
+        if (!function_exists('wc_get_product')) {
+            return 0;
+        }
 
-        if ($variations === [] || !is_array($variations)) {
+        $source_product = wc_get_product($source_product_id);
+        if (!$source_product || !$source_product->is_type('variable')) {
+            return 0;
+        }
+
+        $variation_ids = $source_product->get_children();
+        if ($variation_ids === [] || !is_array($variation_ids)) {
             return 0;
         }
 
         $count = 0;
-        foreach ($variations as $variation) {
-            if (!$variation instanceof WP_Post) {
+        foreach ($variation_ids as $variation_id) {
+            $variation_id = (int) $variation_id;
+            if ($variation_id <= 0) {
                 continue;
             }
 
-            $new_variation_id = $this->clone_variation_post($variation, $new_parent_id);
+            $variation_post = get_post($variation_id);
+            if (!$variation_post instanceof WP_Post) {
+                continue;
+            }
+
+            $new_variation_id = $this->clone_variation_post($variation_post, $new_product_id);
             if ($new_variation_id <= 0) {
                 continue;
             }
 
-            $this->copy_variation_meta((int) $variation->ID, $new_variation_id);
+            $this->copy_meta($variation_id, $new_variation_id);
             $count++;
+        }
+
+        if (function_exists('wc_delete_product_transients')) {
+            wc_delete_product_transients($new_product_id);
         }
 
         return $count;
@@ -65,7 +79,7 @@ class HMLC_Sync_Variations
     {
         $data = [
             'post_type' => 'product_variation',
-            'post_status' => 'publish',
+            'post_status' => $variation->post_status,
             'post_parent' => $new_parent_id,
             'menu_order' => $variation->menu_order,
             'post_title' => $variation->post_title,
@@ -82,7 +96,7 @@ class HMLC_Sync_Variations
         return (int) $new_id;
     }
 
-    private function copy_variation_meta(int $from_id, int $to_id): void
+    private function copy_meta(int $from_id, int $to_id): void
     {
         $meta = get_post_meta($from_id);
         if ($meta === [] || !is_array($meta)) {
@@ -102,6 +116,7 @@ class HMLC_Sync_Variations
                 $values = [$values];
             }
 
+            delete_post_meta($to_id, $meta_key);
             foreach ($values as $value) {
                 add_post_meta($to_id, $meta_key, $value);
             }
@@ -110,11 +125,11 @@ class HMLC_Sync_Variations
 
     private function is_denied_key(string $meta_key): bool
     {
-        if (in_array($meta_key, self::DENYLIST, true)) {
+        if (in_array($meta_key, self::DENIED_KEYS, true)) {
             return true;
         }
 
-        foreach (self::DENYLIST_PREFIXES as $prefix) {
+        foreach (self::DENIED_PREFIXES as $prefix) {
             if (strpos($meta_key, $prefix) === 0) {
                 return true;
             }
