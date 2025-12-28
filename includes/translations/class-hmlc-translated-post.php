@@ -84,7 +84,28 @@ class HMLC_Translated_Post
         }
 
         $translations = $this->translated_object->get_translations($post_id);
-        return isset($translations[$lang_slug]) ? (int) $translations[$lang_slug] : 0;
+        if (!isset($translations[$lang_slug])) {
+            return 0;
+        }
+
+        $translation_id = (int) $translations[$lang_slug];
+        if ($translation_id <= 0) {
+            return 0;
+        }
+
+        $translation_post = get_post($translation_id);
+        if (!$translation_post instanceof WP_Post || $translation_post->post_status === 'trash') {
+            unset($translations[$lang_slug]);
+
+            $source_post = get_post($post_id);
+            if ($source_post instanceof WP_Post) {
+                $this->translated_object->set_translations($post_id, $translations, $source_post->post_type);
+            }
+
+            return 0;
+        }
+
+        return $translation_id;
     }
 
     public function set_post_language(int $post_id, string $lang_slug): void

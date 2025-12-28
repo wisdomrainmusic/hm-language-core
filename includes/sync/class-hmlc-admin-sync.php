@@ -84,7 +84,10 @@ class HMLC_Admin_Sync
 
         $existing_id = $this->translated_post->get_translation($post_id, $target_lang);
         if ($existing_id > 0) {
-            $this->redirect_to_edit($existing_id);
+            $existing_post = get_post($existing_id);
+            if ($existing_post instanceof WP_Post && $existing_post->post_status !== 'trash') {
+                $this->redirect_to_edit($existing_id);
+            }
         }
 
         $new_id = $this->duplicate_post($post);
