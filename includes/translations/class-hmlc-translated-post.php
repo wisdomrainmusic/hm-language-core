@@ -17,6 +17,13 @@ class HMLC_Translated_Post
         'product_variation',
     ];
 
+    private HMLC_Translated_Object $translated_object;
+
+    public function __construct(HMLC_Translated_Object $translated_object)
+    {
+        $this->translated_object = $translated_object;
+    }
+
     public function init(): void
     {
         add_action('init', [$this, 'register_taxonomy'], 5);
@@ -46,6 +53,38 @@ class HMLC_Translated_Post
                 'query_var' => false,
             ]
         );
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function get_post_translations(int $post_id): array
+    {
+        return $this->translated_object->get_translations($post_id);
+    }
+
+    /**
+     * @param array<string, int> $map
+     */
+    public function save_post_translations(int $post_id, array $map): void
+    {
+        $post = get_post($post_id);
+        if (!$post instanceof WP_Post) {
+            return;
+        }
+
+        $this->translated_object->set_translations($post_id, $map, $post->post_type);
+    }
+
+    public function get_translation(int $post_id, string $lang_slug): int
+    {
+        $lang_slug = sanitize_key($lang_slug);
+        if ($lang_slug === '') {
+            return 0;
+        }
+
+        $translations = $this->translated_object->get_translations($post_id);
+        return isset($translations[$lang_slug]) ? (int) $translations[$lang_slug] : 0;
     }
 
     public function set_post_language(int $post_id, string $lang_slug): void

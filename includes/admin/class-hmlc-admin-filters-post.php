@@ -10,16 +10,19 @@ class HMLC_Admin_Filters_Post
 {
     private HMLC_Model $model;
     private HMLC_Translated_Post $translated_post;
+    private HMLC_Admin_Links $admin_links;
 
-    public function __construct(HMLC_Model $model, HMLC_Translated_Post $translated_post)
+    public function __construct(HMLC_Model $model, HMLC_Translated_Post $translated_post, HMLC_Admin_Links $admin_links)
     {
         $this->model = $model;
         $this->translated_post = $translated_post;
+        $this->admin_links = $admin_links;
     }
 
     public function init(): void
     {
         add_action('add_meta_boxes', [$this, 'register_language_metabox']);
+        add_action('add_meta_boxes', [$this, 'register_translations_metabox']);
         add_action('save_post', [$this, 'save_post_language'], 10, 2);
     }
 
@@ -56,6 +59,59 @@ class HMLC_Admin_Filters_Post
             echo '<option value="' . esc_attr($language->slug) . '"' . $selected . '>' . esc_html($language->name ?: $language->slug) . '</option>';
         }
         echo '</select></p>';
+    }
+
+    public function register_translations_metabox(): void
+    {
+        foreach ($this->translated_post->get_supported_post_types() as $post_type) {
+            add_meta_box(
+                'hmlc_post_translations',
+                'Translations',
+                [$this, 'render_translations_metabox'],
+                $post_type,
+                'side',
+                'default'
+            );
+        }
+    }
+
+    public function render_translations_metabox(WP_Post $post): void
+    {
+        $languages = $this->model->get_languages();
+        $current_language = $this->translated_post->get_post_language($post->ID);
+        $translations = $this->translated_post->get_post_translations($post->ID);
+
+        if ($languages === []) {
+            echo '<p>No languages configured.</p>';
+            return;
+        }
+
+        echo '<ul class="hmlc-translations-list">';
+        foreach ($languages as $language) {
+            $label = $language->name ?: $language->slug;
+            echo '<li>';
+            echo '<strong>' . esc_html($label) . '</strong>: ';
+
+            if ($current_language === $language->slug) {
+                echo '<em>Current</em>';
+            } elseif (isset($translations[$language->slug])) {
+                $edit_link = $this->admin_links->get_edit_post_link_for_translation((int) $translations[$language->slug]);
+                if ($edit_link !== '') {
+                    echo '<a href="' . esc_url($edit_link) . '">Edit</a>';
+                } else {
+                    echo '<em>Unavailable</em>';
+                }
+            } else {
+                $create_link = $this->admin_links->get_create_translation_link($post->ID, $language->slug);
+                echo '<span>Not translated</span>';
+                if ($create_link !== '') {
+                    echo ' <a href="' . esc_url($create_link) . '">Create</a>';
+                }
+            }
+
+            echo '</li>';
+        }
+        echo '</ul>';
     }
 
     public function save_post_language(int $post_id, WP_Post $post): void
